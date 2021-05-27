@@ -1,5 +1,5 @@
 from pycode2seq.inference.methods.model import MethodInfo
-from common.utils import pre_order, set_node_technical_token, split_to_subtokens
+from pycode2seq.inference.common.utils import pre_order, set_node_technical_token, split_to_subtokens
 
 def extract_label(method_info: MethodInfo, hide_method_names: bool) -> str :
     if method_info.method.name_node is None:
