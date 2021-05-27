@@ -12,7 +12,7 @@ Minimal code example:
 
 ```python
 import sys
-from pycode2seq.inference import ModelRunner
+from pycode2seq import ModelRunner
 from pycode2seq.inference.paths.extracting import ExtractingParams
 
 def main(argv):
