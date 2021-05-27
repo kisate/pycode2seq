@@ -54,7 +54,7 @@ def train(config: DictConfig):
     vocabulary = Vocabulary.load_vocabulary(join(config.data_folder, config.dataset.name, config.vocabulary_name))
     model, data_module = known_models[config.name](config, vocabulary)
 
-    expanded_states = torch.load("new_net.ckpt")
+    expanded_states = torch.load(config.expanded_path)
 
     model.load_state_dict(expanded_states["state_dict"])
 
@@ -106,7 +106,7 @@ def train(config: DictConfig):
     for param in model.encoder.node_embedding.parameters():
         param.requires_grad = True
     
-    add_mask(model.encoder.node_embedding.weight, expanded_states["size"])
+    add_mask(model.encoder.node_embedding.weight, expanded_states["deltas"]["encoder.node_embedding.weight"])
     
     trainer.fit(model=model, datamodule=data_module)
     trainer.test()

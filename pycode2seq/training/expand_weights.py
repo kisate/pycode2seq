@@ -1,9 +1,10 @@
+from argparse import ArgumentParser
 from torch._C import device
-from code2seq.model import Code2Seq, Code2Class, TypedCode2Seq
+from code2seq.model import Code2Seq
 from code2seq.utils.vocabulary import Vocabulary
 
 import torch
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 
 from torch import nn
 device = torch.device("cuda")
@@ -14,23 +15,35 @@ weights_to_expand = [
     "encoder.node_embedding.weight",
 ]
 
+def expand_weights(checkpoint_path, config_path, output_path):
+    net = torch.load(checkpoint_path)
 
-net = torch.load("big_model.ckpt")
+    config = OmegaConf.load(config_path)
+    vocabulary_path = join(config.data_folder, config.dataset.name, config.vocabulary_name)
+    vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
+    model = Code2Seq(config, vocabulary)
 
-config = OmegaConf.load("configs/code2seq.yaml")
-vocabulary_path = join(config.data_folder, config.dataset.name, config.vocabulary_name)
-vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
-model = Code2Seq(config, vocabulary)
+    deltas = {}
 
-with open("expand.log", "w") as f:
     for key in weights_to_expand:
         weight1 = net["state_dict"][key]
         weight2 = model.state_dict()[key]
+        
         delta = weight2.shape[0] - weight1.shape[0]
         net["state_dict"][key] = torch.cat((weight1, torch.randn(delta, weight1.shape[1]).to(device)))
-        f.write(f"{key} {delta}\n")
+        
+        deltas[key] = delta
 
 
-model.load_state_dict(net["state_dict"])
+    model.load_state_dict(net["state_dict"])
 
-torch.save({"size" : delta, "state_dict": model.state_dict()}, "new_net.ckpt")
+    torch.save({"deltas" : deltas, "state_dict": model.state_dict()}, output_path)
+
+if __name__ == "__main__":
+    arg_parser = ArgumentParser()
+    arg_parser.add_argument("checkpoint", type=str)
+    arg_parser.add_argument("config", type=str)
+    arg_parser.add_argument("output", type=str)
+    args = arg_parser.parse_args()
+
+    expand_weights(args.checkpoint, args.config, args.output)
