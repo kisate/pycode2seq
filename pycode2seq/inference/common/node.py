@@ -16,7 +16,7 @@ class Node():
         return self.token
 
     def get_normalized_token(self) -> str:
-        from common.utils import normalize_token
+        from pycode2seq.inference.common.utils import normalize_token
         if self.token is None:
             return ""
         return normalize_token(self.token, "")
@@ -39,7 +39,7 @@ class Node():
             child.parent = self
 
     def get_children_of_type(self, type_label: str) -> list["Node"]:
-        from parsing.utils import decompress_type_label
+        from pycode2seq.inference.parsing.utils import decompress_type_label
         return [child for child in self.children if next(iter(decompress_type_label(child.type_label)), None) == type_label]
     
     def get_child_of_type(self, type_label: str) -> "Node":
