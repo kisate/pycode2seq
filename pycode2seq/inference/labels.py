@@ -8,7 +8,9 @@ class LabeledData:
     label: str
     paths: list[ASTPath]
 
+    def __str__(self) -> str:
+        return self.label + " " + " ".join(str(path) for path in self.paths)
+
 def extract_labels_with_paths(root: Node, params: ExtractingParams, split_into_methods) -> list[LabeledData]:
     methods = split_into_methods(root)
-    print(len(methods))
     return [LabeledData(extract_label(method, True), extract_paths(method.method.root, params)) for method in methods]
