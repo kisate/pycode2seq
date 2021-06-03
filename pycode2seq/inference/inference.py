@@ -21,6 +21,8 @@ from code2seq.dataset.data_classes import ContextPart, FROM_TOKEN, PATH_NODES, P
 from code2seq.dataset.path_context_dataset import PathContextDataset
 from code2seq.utils.converting import strings_to_wrapped_numpy
 
+from code2seq.utils.metrics import PredictionStatistic
+
 import numpy as np
 
 
@@ -51,7 +53,7 @@ class ModelRunner:
         self.extracting_params = extracting_params
 
     def run_model_on_file(self, file_path: str, language: str) -> list[Tensor]:
-        data = split_file_into_labeled_data(file_path, self.extracting_params, lang_dict[language][0], lang_dict[language][1])
+        data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
         batches = [PathContextBatch([self.labeled_data_to_sample(method, 200, True)]) for method in data]
 
         for batch in batches:
@@ -60,7 +62,26 @@ class ModelRunner:
         with torch.no_grad():
             return [self.model(batch.contexts, batch.contexts_per_label, batch.labels.shape[0]) for batch in batches]
 
+    def run_model_on_file_with_metrics(self, file_path: str, language: str):
+        data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
+        batches = [PathContextBatch([self.labeled_data_to_sample(method, 200, True)]) for method in data]
+        for batch in batches:
+            batch.move_to_device(self.device)
+
+        results = []
+
+        with torch.no_grad():
+            for batch in batches:
+                logits = self.model(batch.contexts, batch.contexts_per_label, batch.labels.shape[0], batch.labels)
+                prediction = logits.argmax(-1)
+
+                statistic = PredictionStatistic(True, self.model._label_pad_id, self.model._metric_skip_tokens)
+                batch_metric = statistic.update_statistic(batch.labels, prediction)
+
+                results.append(batch_metric)
         
+        return results
+
     def labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> PathContextSample:
         n_contexts = min(len(data.paths), max_contexts)
         context_indexes = np.arange(n_contexts)
