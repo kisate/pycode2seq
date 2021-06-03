@@ -25,7 +25,8 @@ def split_kotlin_into_methods(root: Node) -> list[MethodInfo]:
 def collect_method_info(method_node: Node) -> MethodInfo:
     method_name = method_node.get_child_of_type(METHOD_NAME_NODE)
     method_return_type_node = method_node.get_child_of_type(METHOD_RETURN_TYPE_NODE)
-    method_return_type_node.token = collect_parameter_token(method_return_type_node)
+    if method_return_type_node:
+        method_return_type_node.token = collect_parameter_token(method_return_type_node) 
 
     class_root = get_enclosing_class(method_node)
     class_name = class_root.get_child_of_type(CLASS_NAME_NODE) if class_root is not None else None

@@ -75,6 +75,3 @@ if __name__ == "__main__":
 
             except ValueError:
                 print(project_path)
-
-        # list(tqdm(p.imap(lambda x : preprocess_csv(str(x) + "kt/", args.holdout, args.shuffle, c2s_output), paths), total=len(paths))) 
-        
