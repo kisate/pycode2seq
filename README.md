@@ -4,8 +4,6 @@ Training and inference with multiple languages of PyTorch's implementation of co
 
 ## Inference
 
-Download antlr and create python parsers with grammars in src/inference/antlr.
-
 Download checkpoint and config.
 
 Minimal code example:
@@ -45,14 +43,16 @@ Download astminer and run:
 Mine projects for paths:
 
 ```shell
-python training/mine_projects.py data <data folder> output <output folder> cli_path <path to astminer's cli.sh>
+python training/mine_projects.py <data folder> <output folder> <path to astminer's cli.sh>
 ```
 
 Combine mined paths:
 
 ```shell
-python training/combine_path.py data <data folder>
+python training/astminer_to_code2seq.py <data folder/holdout> <output folder> <holdout>
 ```
+
+Build vocabulary with build_vocabulary.py from code2seq module
 
 Combine vocabularies:
 
