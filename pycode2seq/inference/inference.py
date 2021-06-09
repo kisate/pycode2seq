@@ -23,6 +23,8 @@ from code2seq.utils.converting import strings_to_wrapped_numpy
 
 from code2seq.utils.metrics import PredictionStatistic
 
+from code2seq.utils.training import cut_encoded_contexts
+
 import numpy as np
 
 
@@ -51,6 +53,26 @@ class ModelRunner:
         self.model.to(self.device)
 
         self.extracting_params = extracting_params
+
+    def get_embedding(self, batch: PathContextBatch) -> Tensor:
+        encoded_paths = self.model.encoder(batch.contexts)
+       
+        # [n layers; batch size; decoder size]
+        initial_state = (
+            torch.cat([ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(batch.contexts_per_label)])
+            .unsqueeze(0)
+        )
+        return initial_state
+
+    def run_embeddings_on_file(self, file_path: str, language: str) -> list[Tensor]:
+        data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
+        batches = [PathContextBatch([self.labeled_data_to_sample(method, 200, True)]) for method in data]
+
+        for batch in batches:
+            batch.move_to_device(self.device)
+
+        with torch.no_grad():
+            return [self.get_embedding(batch) for batch in batches]
 
     def run_model_on_file(self, file_path: str, language: str) -> list[Tensor]:
         data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
