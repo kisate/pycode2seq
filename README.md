@@ -21,7 +21,14 @@ def main(argv):
         save_path = "./tmp",
     )
 
+    #List of embeddings for each method
     method_embeddings = runner.run_embeddings_on_file(argv[1], "kt") 
+
+    #Code2seq predictions
+    predictions = runner.run_on_file(argv[1], "kt")
+
+    #Predicted method names
+    names = [runner.prediction_to_text(prediction) for prediction in predictions]
 
 if __name__ == "__main__":
     main(sys.argv)
