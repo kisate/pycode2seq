@@ -1,17 +1,13 @@
 from pycode2seq.inference.utils import download_file_from_google_drive, extract_archive
-from .methods.splitting_java import split_java_into_methods
-from .methods.splitting_kotlin import split_kotlin_into_methods
-from omegaconf.dictconfig import DictConfig
+from pycode2seq.inference.methods.splitting_java import split_java_into_methods
+from pycode2seq.inference.methods.splitting_kotlin import split_kotlin_into_methods
 import torch
 from torch.functional import Tensor
-from .paths.extracting import ExtractingParams
+from pycode2seq.inference.paths.extracting import ExtractingParams
 from antlr4 import *
-from antlr4.tree.Tree import Tree
-from .antlr.KotlinLexer import KotlinLexer
-from .antlr.KotlinParser import KotlinParser
-from .labels import LabeledData, extract_labels_with_paths 
+from pycode2seq.inference.labels import LabeledData, extract_labels_with_paths 
 
-from .parsing.languages import parse_java_file, parse_kotlin_file
+from pycode2seq.inference.parsing.languages import parse_java_file, parse_kotlin_file
 
 from omegaconf import OmegaConf
 from code2seq.utils.vocabulary import Vocabulary
@@ -22,8 +18,6 @@ from code2seq.dataset.path_context_dataset import PathContextDataset
 from code2seq.utils.converting import strings_to_wrapped_numpy
 
 from code2seq.utils.metrics import PredictionStatistic
-
-from code2seq.utils.training import cut_encoded_contexts
 
 import numpy as np
 
