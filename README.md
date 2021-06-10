@@ -2,9 +2,13 @@
 
 Training and inference with multiple languages of PyTorch's implementation of code2seq model.
 
-## Inference
+## Installation
 
-Download checkpoint and config.
+```shell
+python setup.py install
+```
+
+## Inference
 
 Minimal code example:
 
