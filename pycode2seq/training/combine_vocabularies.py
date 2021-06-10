@@ -1,9 +1,10 @@
 from argparse import ArgumentParser
+from typing import Dict
 from code2seq.utils.vocabulary import Vocabulary
 
 from os import path
 
-def combine_dicts(dict1: dict[str, int], dict2: dict[str, int]):
+def combine_dicts(dict1: Dict[str, int], dict2: Dict[str, int]):
     new_items = set(key for key in dict2.keys()).difference(key for key in dict1.keys())
     new_id = max(item for _, item in dict1.items())
 

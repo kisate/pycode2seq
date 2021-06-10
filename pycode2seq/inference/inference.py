@@ -1,3 +1,4 @@
+from typing import List
 from pycode2seq.inference.utils import download_file_from_google_drive, extract_archive
 from pycode2seq.inference.methods.splitting_java import split_java_into_methods
 from pycode2seq.inference.methods.splitting_kotlin import split_kotlin_into_methods
@@ -32,7 +33,7 @@ lang_dict = {
     "java" : (parse_java_file, split_java_into_methods)
 }
 
-def split_file_into_labeled_data(file_path: str, params: ExtractingParams, parse_file, split_into_methods) -> list[LabeledData]:
+def split_file_into_labeled_data(file_path: str, params: ExtractingParams, parse_file, split_into_methods) -> List[LabeledData]:
     root = parse_file(file_path)
     return extract_labels_with_paths(root, params, split_into_methods)
 
@@ -59,7 +60,7 @@ class ModelRunner:
         )
         return initial_state
 
-    def run_embeddings_on_file(self, file_path: str, language: str) -> list[Tensor]:
+    def run_embeddings_on_file(self, file_path: str, language: str) -> List[Tensor]:
         data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
         batches = [PathContextBatch([self.labeled_data_to_sample(method, 200, True)]) for method in data]
 
@@ -69,7 +70,7 @@ class ModelRunner:
         with torch.no_grad():
             return [self.get_embedding(batch) for batch in batches]
 
-    def run_model_on_file(self, file_path: str, language: str) -> list[Tensor]:
+    def run_model_on_file(self, file_path: str, language: str) -> List[Tensor]:
         data = split_file_into_labeled_data(file_path, self.extracting_params, *lang_dict[language])
         batches = [PathContextBatch([self.labeled_data_to_sample(method, 200, True)]) for method in data]
 

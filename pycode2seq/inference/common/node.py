@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, List
 
 class Node():
         
@@ -8,7 +8,7 @@ class Node():
         self.parent = parent
         self.token = token
         self.metadata = {}
-        self.children: list["Node"] = []
+        self.children: List["Node"] = []
 
     def get_token(self) -> str:
         if self.token is None:
@@ -38,7 +38,7 @@ class Node():
         for child in self.children:
             child.parent = self
 
-    def get_children_of_type(self, type_label: str) -> list["Node"]:
+    def get_children_of_type(self, type_label: str) -> List["Node"]:
         from pycode2seq.inference.parsing.utils import decompress_type_label
         return [child for child in self.children if next(iter(decompress_type_label(child.type_label)), None) == type_label]
     

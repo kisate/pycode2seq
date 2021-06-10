@@ -1,4 +1,4 @@
-from .node import Node
+from pycode2seq.inference.common.node import Node
 import regex as re 
 
 TECHNICAL_TOKEN_KEY = "technical_token"
