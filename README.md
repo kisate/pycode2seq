@@ -10,23 +10,14 @@ Minimal code example:
 
 ```python
 import sys
-from pycode2seq import ModelRunner
-from pycode2seq.inference.paths.extracting import ExtractingParams
+from pycode2seq import DefaultModelRunner
 
 def main(argv):
-    runner = ModelRunner(
-        config_path=argv[1],
-        vocabulary_path=argv[2],
-        checkpoint_path=argv[3],
-        ExtractingParams(
-            max_length=8,
-            max_width=3,
-            paths_per_method=200
-        )
+    runner = DefaultModelRunner(
+        save_path = "./tmp",
     )
 
-    prediction = runner.run_model_on_file(argv[4])
-    print(runner.prediction_to_text(prediction))
+    method_embeddings = runner.run_embeddings_on_file(argv[1], "kt") 
 
 if __name__ == "__main__":
     main(sys.argv)
