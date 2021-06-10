@@ -1,10 +1,10 @@
+from pycode2seq.inference.utils import download_file_from_google_drive, extract_archive
 from .methods.splitting_java import split_java_into_methods
 from .methods.splitting_kotlin import split_kotlin_into_methods
 from omegaconf.dictconfig import DictConfig
 import torch
 from torch.functional import Tensor
 from .paths.extracting import ExtractingParams
-from .parsing.utils import compress_tree, convert_rule_context, shorten_nodes
 from antlr4 import *
 from antlr4.tree.Tree import Tree
 from .antlr.KotlinLexer import KotlinLexer
@@ -27,6 +27,7 @@ from code2seq.utils.training import cut_encoded_contexts
 
 import numpy as np
 
+import os
 
 from code2seq import utils
 import sys
@@ -145,3 +146,25 @@ class ModelRunner:
     def prediction_to_text(self, prediction: Tensor) -> str:
         ids = prediction.argmax(-1)
         return "|".join([ self.get_label_by_id(id[0]) for id in ids])
+
+
+class DefaultModelRunner(ModelRunner):
+    FILE_ID = "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t"
+    
+    def __init__(self, save_path) -> None:
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+
+        download_path = os.path.join(save_path, "model.tar.xz")
+        model_path = os.path.join(save_path, "model")
+        config_path = os.path.join(model_path, "code2seq.yaml")
+        vocabulary_path = os.path.join(model_path, "vocabulary.pkl")
+        checkpoint_path = os.path.join(model_path, "model.ckpt")
+
+        if not os.path.exists(model_path):
+            print("Model not found. Downloading")
+            download_file_from_google_drive(self.FILE_ID, download_path)
+            extract_archive(download_path, save_path)
+
+
+        super().__init__(config_path, vocabulary_path, checkpoint_path, ExtractingParams(8, 3, 200))
