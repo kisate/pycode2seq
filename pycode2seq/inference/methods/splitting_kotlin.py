@@ -1,3 +1,4 @@
+from typing import List
 from pycode2seq.inference.common.utils import pre_order
 from pycode2seq.inference.common.node import Node
 
