@@ -1,3 +1,4 @@
+from typing import List
 from pycode2seq.inference.common.utils import pre_order
 from pycode2seq.inference.common.node import Node
 
@@ -19,7 +20,7 @@ PARAMETER_RETURN_TYPE_NODE = "typeType"
 PARAMETER_NAME_NODE = "variableDeclaratorId"
 
 
-def split_java_into_methods(root: Node) -> list[MethodInfo]:
+def split_java_into_methods(root: Node) -> List[MethodInfo]:
     method_roots = [node for node in pre_order(root) if decompress_type_label(node.type_label)[-1] == METHOD_NODE]
     return [collect_method_info(root) for root in method_roots]
 
@@ -57,7 +58,7 @@ def get_enclosing_class(root: Node) -> Node:
 
     return None
 
-def get_list_of_parameters(root: Node) -> list[ParameterNode]:
+def get_list_of_parameters(root: Node) -> List[ParameterNode]:
     if decompress_type_label(root.type_label)[-1] == METHOD_SINGLE_PARAMETER_NODE:
         return [get_parameter_info_from_node(root)]
     

@@ -18,7 +18,7 @@ PARAMETER_RETURN_TYPE_NODE = "type"
 PARAMETER_NAME_NODE = "simpleIdentifier"
 
 
-def split_kotlin_into_methods(root: Node) -> list[MethodInfo]:
+def split_kotlin_into_methods(root: Node) -> List[MethodInfo]:
     method_roots = [node for node in pre_order(root) if decompress_type_label(node.type_label)[-1] == METHOD_NODE]
     return [collect_method_info(root) for root in method_roots]
 
@@ -51,7 +51,7 @@ def get_enclosing_class(root: Node) -> Node:
 
     return None
 
-def get_list_of_parameters(root: Node) -> list[ParameterNode]:
+def get_list_of_parameters(root: Node) -> List[ParameterNode]:
     
     return [
         get_parameter_info_from_node(child) for child in root.children 

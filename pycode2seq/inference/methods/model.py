@@ -1,3 +1,4 @@
+from typing import List
 from pycode2seq.inference.common.node import Node
 from dataclasses import dataclass
 from abc import abstractmethod
@@ -43,7 +44,7 @@ class ParameterNode:
 class MethodInfo:
     method: MethodNode
     enclosing_element: ElementNode
-    method_parameters: list[ParameterNode]   
+    method_parameters: List[ParameterNode]   
 
     @property
     def name(self):
