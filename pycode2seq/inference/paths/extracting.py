@@ -41,7 +41,7 @@ def collect_paths(pieces:List[List[PathPiece]], node: Node, params: ExtractingPa
             for left_piece in left_pieces:
                 for right_piece in right_pieces:
                     if len(left_piece) + len(right_piece) + 1 <= params.max_length and left_piece.terminal.get_normalized_token() and right_piece.terminal.get_normalized_token():
-                        paths.append(ASTPath(left_piece.nodes + [node] + List(reversed(right_piece.nodes)), left_piece.terminal, right_piece.terminal))
+                        paths.append(ASTPath(left_piece.nodes + [node] + list(reversed(right_piece.nodes)), left_piece.terminal, right_piece.terminal))
 
     return paths
 
