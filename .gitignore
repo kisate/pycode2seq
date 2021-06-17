@@ -1,0 +1,7 @@
+pycode2seq/inference/antlr/.antlr/
+pycode2seq/inference/antlr/.svn/
+pycode2seq/resources/
+
+dist/
+build/
+pycode2seq.egg-info/
