@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 from os import path
 from random import seed
 
-
 from code2seq.preprocessing.astminer_to_code2seq import preprocess_csv
 
 if __name__ == "__main__":

@@ -1,21 +1,21 @@
 from argparse import ArgumentParser
-from torch._C import device
+from os.path import join
+
+import torch
+
+from omegaconf import OmegaConf
 from code2seq.model import Code2Seq
 from code2seq.utils.vocabulary import Vocabulary
 
-import torch
-from omegaconf import OmegaConf
-
-from torch import nn
-device = torch.device("cuda")
-
-from os.path import join
 
 weights_to_expand = [
     "encoder.node_embedding.weight",
 ]
 
+
 def expand_weights(checkpoint_path, config_path, output_path):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     net = torch.load(checkpoint_path)
 
     config = OmegaConf.load(config_path)
@@ -28,16 +28,16 @@ def expand_weights(checkpoint_path, config_path, output_path):
     for key in weights_to_expand:
         weight1 = net["state_dict"][key]
         weight2 = model.state_dict()[key]
-        
+
         delta = weight2.shape[0] - weight1.shape[0]
         net["state_dict"][key] = torch.cat((weight1, torch.randn(delta, weight1.shape[1]).to(device)))
-        
-        deltas[key] = delta
 
+        deltas[key] = delta
 
     model.load_state_dict(net["state_dict"])
 
-    torch.save({"deltas" : deltas, "state_dict": model.state_dict()}, output_path)
+    torch.save({"deltas": deltas, "state_dict": model.state_dict()}, output_path)
+
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()

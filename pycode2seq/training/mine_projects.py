@@ -10,8 +10,12 @@ import multiprocessing as mp
 
 holdouts = ["train", "test", "val"]
 
+
 def call_astminer(path, output_path, cli_path):
-    subprocess.call(f"./{cli_path} code2vec --lang kt --project {path} --output {Path(output_path, path.name)} --split-tokens --granularity method --hide-method-name", shell=True)
+    subprocess.call(
+        f"./{cli_path} code2vec --lang kt --project {path} --output {Path(output_path, path.name)} --split-tokens --granularity method --hide-method-name",
+        shell=True)
+
 
 def process_holdout(data_path, output_path, cli_path):
     if not Path(output_path).exists():
@@ -22,6 +26,7 @@ def process_holdout(data_path, output_path, cli_path):
     _foo = functools.partial(call_astminer, output_path=output_path, cli_path=cli_path)
     with mp.Pool(4) as p:
         list(tqdm(p.imap(_foo, paths), total=len(paths)))
+
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser()

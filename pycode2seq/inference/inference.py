@@ -1,50 +1,54 @@
-from typing import List
-from pycode2seq.inference.utils import download_file_from_google_drive, extract_archive
-from pycode2seq.inference.methods.splitting_java import split_java_into_methods
-from pycode2seq.inference.methods.splitting_kotlin import split_kotlin_into_methods
-import torch
-from torch.functional import Tensor
-from pycode2seq.inference.paths.extracting import ExtractingParams
-from antlr4 import *
-from pycode2seq.inference.labels import LabeledData, extract_labels_with_paths 
-
-from pycode2seq.inference.parsing.languages import parse_java_file, parse_kotlin_file
-
-from omegaconf import OmegaConf
-from code2seq.utils.vocabulary import Vocabulary
-from code2seq.model import Code2Seq
-
-from code2seq.dataset.data_classes import ContextPart, FROM_TOKEN, PATH_NODES, PathContextSample, PathContextBatch, TO_TOKEN
-from code2seq.dataset.path_context_dataset import PathContextDataset
-from code2seq.utils.converting import strings_to_wrapped_numpy
-
-from code2seq.utils.metrics import PredictionStatistic
-
+import os
 import numpy as np
 
-import os
+from typing import List
 
-from code2seq import utils
-import sys
-sys.modules["utils"] = utils
+import torch
+from torch import Tensor
+
+from omegaconf import OmegaConf
+
+from code2seq.utils.vocabulary import Vocabulary
+from code2seq.model import Code2Seq
+from code2seq.dataset.data_classes import ContextPart, FROM_TOKEN, PATH_NODES, PathContextSample, PathContextBatch, \
+    TO_TOKEN
+from code2seq.dataset.path_context_dataset import PathContextDataset
+from code2seq.utils.converting import strings_to_wrapped_numpy
+from code2seq.utils.metrics import PredictionStatistic
+# from code2seq import utils
+
+from pycode2seq.inference.methods.splitting_java import split_java_into_methods
+from pycode2seq.inference.methods.splitting_kotlin import split_kotlin_into_methods
+from pycode2seq.inference.parsing.languages import parse_java_file, parse_kotlin_file
+from pycode2seq.inference.paths.extracting import ExtractingParams
+from pycode2seq.inference.labels import LabeledData, extract_labels_with_paths
+from pycode2seq.inference.utils import download_file_from_google_drive, extract_archive
+
+# import sys
+# sys.modules["utils"] = utils
+
 
 lang_dict = {
-    "kt" : (parse_kotlin_file, split_kotlin_into_methods),
-    "java" : (parse_java_file, split_java_into_methods)
+    "kt": (parse_kotlin_file, split_kotlin_into_methods),
+    "java": (parse_java_file, split_java_into_methods)
 }
 
-def split_file_into_labeled_data(file_path: str, params: ExtractingParams, parse_file, split_into_methods) -> List[LabeledData]:
+
+def split_file_into_labeled_data(file_path: str, params: ExtractingParams, parse_file, split_into_methods) \
+        -> List[LabeledData]:
     root = parse_file(file_path)
     return extract_labels_with_paths(root, params, split_into_methods)
 
+
 class ModelRunner:
-    def __init__(self, config_path: str, vocabulary_path: str, checkpoint_path: str, extracting_params: ExtractingParams) -> None:
+    def __init__(self, config_path: str, vocabulary_path: str, checkpoint_path: str,
+                 extracting_params: ExtractingParams) -> None:
         self.config = OmegaConf.load(config_path)
         self.vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
         self.model = Code2Seq(self.config, self.vocabulary)
 
         self.model.load_state_dict(torch.load(checkpoint_path)["state_dict"])
-        
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
 
@@ -52,11 +56,11 @@ class ModelRunner:
 
     def get_embedding(self, batch: PathContextBatch) -> Tensor:
         encoded_paths = self.model.encoder(batch.contexts)
-       
+
         # [n layers; batch size; decoder size]
         initial_state = (
             torch.cat([ctx_batch.mean(0).unsqueeze(0) for ctx_batch in encoded_paths.split(batch.contexts_per_label)])
-            .unsqueeze(0)
+                .unsqueeze(0)
         )
         return initial_state
 
@@ -97,7 +101,7 @@ class ModelRunner:
                 batch_metric = statistic.update_statistic(batch.labels, prediction)
 
                 results.append(batch_metric)
-        
+
         return results
 
     def labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> PathContextSample:
@@ -117,7 +121,6 @@ class ModelRunner:
             parameters.is_wrapped,
         )
 
-        
         context_parts = [
             ContextPart(FROM_TOKEN, self.vocabulary.token_to_id, self.config.dataset.token),
             ContextPart(PATH_NODES, self.vocabulary.node_to_id, self.config.dataset.path),
@@ -140,12 +143,12 @@ class ModelRunner:
 
     def prediction_to_text(self, prediction: Tensor) -> str:
         ids = prediction.argmax(-1)
-        return "|".join([ self.get_label_by_id(id[0]) for id in ids])
+        return "|".join([self.get_label_by_id(id[0]) for id in ids])
 
 
 class DefaultModelRunner(ModelRunner):
     FILE_ID = "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t"
-    
+
     def __init__(self, save_path) -> None:
         if not os.path.exists(save_path):
             os.mkdir(save_path)
@@ -160,6 +163,5 @@ class DefaultModelRunner(ModelRunner):
             print("Model not found. Downloading")
             download_file_from_google_drive(self.FILE_ID, download_path)
             extract_archive(download_path, save_path)
-
 
         super().__init__(config_path, vocabulary_path, checkpoint_path, ExtractingParams(8, 3, 200))

@@ -32,14 +32,17 @@ def get_typed_code2seq(config: DictConfig, vocabulary: Vocabulary) -> Tuple[Ligh
     data_module = TypedPathContextDataModule(config, vocabulary)
     return model, data_module
 
+
 def add_mask(weight, size):
     dev = torch.device("cuda")
     mask = torch.zeros_like(weight).to(dev)
     mask[-size:] = 1.
 
     def tmp(grad):
-        return grad*mask
+        return grad * mask
+
     weight.register_hook(tmp)
+
 
 @hydra.main(config_path="configs", config_name="code2seq")
 def train(config: DictConfig):
@@ -102,12 +105,12 @@ def train(config: DictConfig):
 
     for param in model.parameters():
         param.requires_grad = False
-    
+
     for param in model.encoder.node_embedding.parameters():
         param.requires_grad = True
-    
+
     add_mask(model.encoder.node_embedding.weight, expanded_states["deltas"]["encoder.node_embedding.weight"])
-    
+
     trainer.fit(model=model, datamodule=data_module)
     trainer.test()
 
