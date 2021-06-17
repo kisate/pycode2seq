@@ -5,30 +5,38 @@ Training and inference with multiple languages of PyTorch's implementation of co
 ## Installation
 
 ```shell
-python setup.py install
+pip install pycode2seq
 ```
 
 ## Inference
 
-Minimal code example:
+####File embeddings example
 
 ```python
+from pycode2seq import Code2Seq
+
+model = Code2Seq.load("kt_java")
+
+# Dictionary of method names with their embeddings
+method_embeddings = model.methods_embeddings("File.kt", "kt")
+```
+
+####Full functionality
+```python
 import sys
-from pycode2seq import DefaultModelRunner
+from pycode2seq import Code2Seq
 
 def main(argv):
-    runner = DefaultModelRunner(
-        save_path = "./tmp",
-    )
+    model = Code2Seq.load("kt_java")
 
-    #List of embeddings for each method
-    method_embeddings = runner.run_embeddings_on_file(argv[1], "kt") 
+    # Dictionary of method names with their embeddings
+    method_embeddings = model.methods_embeddings("File.kt", "kt") 
 
     #Code2seq predictions
-    predictions = runner.run_on_file(argv[1], "kt")
+    predictions = model.run_on_file(argv[1], "kt")
 
     #Predicted method names
-    names = [runner.prediction_to_text(prediction) for prediction in predictions]
+    names = [model.prediction_to_text(prediction) for prediction in predictions]
 
 if __name__ == "__main__":
     main(sys.argv)
