@@ -1,2 +1,1 @@
-from .inference.inference import DefaultModelRunner
-from .inference.inference import ModelRunner
+from .inference.model.model import Model as Code2Seq

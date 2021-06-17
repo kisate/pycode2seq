@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 from antlr4.tree.Tree import TerminalNode
 from pycode2seq.inference.common.node import Node
 from antlr4 import ParserRuleContext
 from antlr4 import Lexer
 
 
-def convert_rule_context(cntx: ParserRuleContext, rule_names: List[str], parent: Node, lexer: Lexer) -> Node:
+def convert_rule_context(cntx: ParserRuleContext, rule_names: List[str], parent: Optional[Node], lexer: Lexer) -> Node:
     type_label = rule_names[cntx.getRuleIndex()]
     current_node = Node(type_label, parent, None)
     children = []
@@ -39,7 +39,7 @@ def compress_tree(root: Node) -> Node:
     return root
 
 
-def decompress_type_label(type_label: str):
+def decompress_type_label(type_label: str) -> List[str]:
     return type_label.split("|")
 
 
