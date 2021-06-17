@@ -1,22 +1,29 @@
+import regex as re
+
 from typing import List
+
 from pycode2seq.inference.common.node import Node
-import regex as re 
+
 
 TECHNICAL_TOKEN_KEY = "technical_token"
 DEFAULT_TOKEN = "EMPTY_TOKEN"
+
 
 def do_traverse_pre_order(node: Node, result: List[Node]):
     result.append(node)
     for child in node.children:
         do_traverse_pre_order(child, result)
 
+
 def pre_order(root: Node) -> List[Node]:
     result = []
     do_traverse_pre_order(root, result)
     return result
 
+
 def set_node_technical_token(node: Node, token: str):
     node.metadata[TECHNICAL_TOKEN_KEY] = token
+
 
 def normalize_token(token: str, default: str) -> str:
     clean_token = re.sub("\\P{Print}", "", re.sub("[\"',]", "", re.sub("//s+", "", re.sub("\\\\n", "", token.lower()))))
@@ -28,7 +35,7 @@ def normalize_token(token: str, default: str) -> str:
         if not careful_stripped:
             return default
         return careful_stripped
-    
+
     return stripped
 
 

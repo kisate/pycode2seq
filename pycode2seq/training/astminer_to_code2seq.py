@@ -6,10 +6,12 @@ from typing import Dict
 import numpy
 from tqdm import tqdm
 
-from code2seq.utils.filesystem import count_lines_in_file
 from random import shuffle, seed
 
 from pathlib import Path
+
+import multiprocessing as mp
+
 
 def _get_id2value_from_csv(path_: str) -> Dict[str, str]:
     return dict(numpy.genfromtxt(path_, delimiter=",", dtype=(str, str))[1:])
@@ -32,7 +34,6 @@ def preprocess_csv(data_folder: str, holdout_name: str, is_shuffled: bool, c2s_o
 
     id_to_tokens = _get_id2value_from_csv(id_to_token_data_path)
 
-
     with open(path_contexts_path, "r") as path_contexts_file:
         output_lines = []
         for line in path_contexts_file:
@@ -49,8 +50,6 @@ def preprocess_csv(data_folder: str, holdout_name: str, is_shuffled: bool, c2s_o
         c2s_output.write("".join(output_lines))
 
 
-import multiprocessing as mp
-
 if __name__ == "__main__":
     arg_parser = ArgumentParser()
     arg_parser.add_argument("data", type=str)
@@ -65,7 +64,7 @@ if __name__ == "__main__":
 
     if path.exists(output_c2s_path):
         remove(output_c2s_path)
-    
+
     paths = list(Path(args.data).glob("*/"))
 
     with open(output_c2s_path, "a+") as c2s_output, mp.Pool(4) as p:

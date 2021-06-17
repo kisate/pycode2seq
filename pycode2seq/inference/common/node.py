@@ -1,8 +1,8 @@
-from dataclasses import dataclass
-from typing import Any, List
+from typing import List
 
-class Node():
-        
+
+class Node:
+
     def __init__(self, type_label: str, parent: "Node", token: str) -> None:
         self.type_label = type_label
         self.parent = parent
@@ -20,9 +20,9 @@ class Node():
         if self.token is None:
             return ""
         return normalize_token(self.token, "")
-    
-    def pretty_print(self, indent = 0, indent_symbol = "--") -> None:
-        print(indent_symbol*indent, end="")
+
+    def pretty_print(self, indent=0, indent_symbol="--") -> None:
+        print(indent_symbol * indent, end="")
         print(self.type_label, end="")
 
         if self.get_token():
@@ -40,10 +40,11 @@ class Node():
 
     def get_children_of_type(self, type_label: str) -> List["Node"]:
         from pycode2seq.inference.parsing.utils import decompress_type_label
-        return [child for child in self.children if next(iter(decompress_type_label(child.type_label)), None) == type_label]
-    
+        return [child for child in self.children if
+                next(iter(decompress_type_label(child.type_label)), None) == type_label]
+
     def get_child_of_type(self, type_label: str) -> "Node":
         return next(iter(self.get_children_of_type(type_label)), None)
 
     def is_leaf(self):
-        return len(self.children) == 0 
+        return len(self.children) == 0

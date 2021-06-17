@@ -1,12 +1,11 @@
-from typing import List
-from antlr4.Token import CommonToken
+from typing import List, Optional
 from antlr4.tree.Tree import TerminalNode
 from pycode2seq.inference.common.node import Node
 from antlr4 import ParserRuleContext
 from antlr4 import Lexer
 
 
-def convert_rule_context(cntx: ParserRuleContext, rule_names: List[str], parent: Node, lexer: Lexer) -> Node:
+def convert_rule_context(cntx: ParserRuleContext, rule_names: List[str], parent: Optional[Node], lexer: Lexer) -> Node:
     type_label = rule_names[cntx.getRuleIndex()]
     current_node = Node(type_label, parent, None)
     children = []
@@ -21,8 +20,9 @@ def convert_rule_context(cntx: ParserRuleContext, rule_names: List[str], parent:
     return current_node
 
 
-def convert_terminal(terminal_node: TerminalNode, parent: Node, lexer:Lexer):
+def convert_terminal(terminal_node: TerminalNode, parent: Node, lexer: Lexer):
     return Node(lexer.symbolicNames[terminal_node.getSymbol().type], parent, terminal_node.getSymbol().text)
+
 
 def compress_tree(root: Node) -> Node:
     if len(root.children) == 1:
@@ -38,20 +38,22 @@ def compress_tree(root: Node) -> Node:
     root.set_children([compress_tree(child) for child in root.children])
     return root
 
-def decompress_type_label(type_label: str):
+
+def decompress_type_label(type_label: str) -> List[str]:
     return type_label.split("|")
+
 
 def shorten_nodes(root: Node) -> Node:
     parts = decompress_type_label(root.type_label)
     label = parts[0]
-    
+
     if len(parts) > 1:
         label += "/" + parts[-1]
-    
-    children = [shorten_nodes(child) for child in  root.children]
+
+    children = [shorten_nodes(child) for child in root.children]
 
     new_node = Node(label, root.parent, root.token)
 
     new_node.set_children(children)
-    
-    return new_node 
+
+    return new_node
