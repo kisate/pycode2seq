@@ -60,14 +60,18 @@ class Model:
 
         self.model.load_state_dict(torch.load(checkpoint_path, map_location=torch.device('cpu'))["state_dict"])
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
+        self.device = torch.device("cpu")
+        self.to(self.device)
         self.model.eval()
 
         self.extracting_params = extracting_params
 
         self.model_name = model_name
         self.default_lang = None if model_name in Model.multi_models else model_name
+
+    def to(self, device: torch.device):
+        self.device = device
+        self.model.to(self.device)
 
     def _prepare_batches(self, file_path: str, language: Language) -> Tuple[List[PathContextBatch], List[str]]:
         root = language.parse(file_path)

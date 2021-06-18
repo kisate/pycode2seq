@@ -1,8 +1,8 @@
-from pycode2seq.inference.model.model import Model
+from pycode2seq import Code2Seq
 
 
 def main():
-    model = Model.load("kt_java")
+    model = Code2Seq.load("kt_java")
     embs = model.methods_embeddings("FairSeqGeneration.kt", "kt")
 
     assert len(embs) == 9
