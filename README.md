@@ -1,6 +1,10 @@
 # pycode2seq
 
-Training and inference with multiple languages of PyTorch's implementation of code2seq model.
+Pure Python library for `code2seq` embeddings. 
+
+Support extension of existing pretrained code2seq models to multilingual models. 
+We provided an example of Java model extension with Kotlin.
+Pretrained model usage example provided below.  
 
 ## Installation
 
@@ -10,18 +14,18 @@ pip install pycode2seq
 
 ## Inference
 
-####File embeddings example
+#### File embeddings example
 
 ```python
 from pycode2seq import Code2Seq
 
 model = Code2Seq.load("kt_java")
-
-# Dictionary of method names with their embeddings
-method_embeddings = model.methods_embeddings("File.kt", "kt")
+method_embeddings = model.methods_embeddings("File.kt")
 ```
 
-####Full functionality
+Pretrained Java and Kotlin common model will be downloaded automatically.
+
+#### Full functionality
 ```python
 import sys
 from pycode2seq import Code2Seq
@@ -41,6 +45,17 @@ def main(argv):
 if __name__ == "__main__":
     main(sys.argv)
 ```
+
+### Available models
+
+- Java (`java`)
+- Kotlin (`kt`)
+- Java & Kotlin (`kt_java`)
+
+`kt_java` is compatible with `java` model and should have the same embeddings.
+`kotlin` model is a part of `kt_java` model, so they are compatible too.
+
+So you can use the common `kt_java` model and get **embeddings in one vector space for both languages**.
 
 ## Training
 
