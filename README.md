@@ -116,6 +116,6 @@ Clone [astminer fork with kotlin support](https://github.com/kisate/astminer) an
 ./gradlew shadowJar
 ```
 
-Extract methods with ```cli.sh``` arguments and usage can be found in ```training/mine_projects.py```.
+Extract methods with ```cli.sh```. Arguments and usage can be found in ```training/mine_projects.py```.
 
 Pass path to folder with csvs to ```run_model_on_astminer_csv()```.
