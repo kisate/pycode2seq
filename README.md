@@ -90,3 +90,29 @@ Expand weights:
 ```shell
 python training/expand_weights.py
 ```
+
+## Using speedy-antlr-tool
+
+You can use [speedy-antlr](https://speedy-antlr-tool.readthedocs.io/en/latest/example.html) to speed up file parsing speed.
+
+Clone and install [modified example](https://github.com/amykyta3/speedy-antlr-example).
+
+Replace parser call with:
+
+```python
+stream = antlr4.FileStream(input_file)
+tree = sa_kotlin.parse(stream, "kotlinFile", sa_kotlin.SA_ErrorListener())
+```
+
+You still need lexer to recover token values, though.
+
+Note, that to make Java parser you will need to follow speedy-antlr tutorial and make another package.
+
+## Using astminer to parse files
+
+Clone [astminer fork with kotlin support](https://github.com/kisate/astminer) and run
+
+```shell
+./gradlew shadowJar
+```
+
