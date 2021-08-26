@@ -3,13 +3,14 @@ import os
 import requests
 import tarfile
 
+from pathlib import Path
 
 class ModelLoader:
     URL = "https://docs.google.com/uc?export=download"
 
     @staticmethod
     def model_path(name: str):
-        cache_path = "~/.cache/pycode2seq"
+        cache_path = Path.home() / Path(".cache", "pycode2seq")
         return os.path.join(cache_path, name)
 
     @staticmethod

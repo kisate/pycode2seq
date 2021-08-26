@@ -1,3 +1,5 @@
+from antlr4.FileStream import FileStream
+from pycode2seq.inference.common.node import Node
 from typing import Callable
 
 from antlr4 import Lexer, InputStream, Parser as AntlrParser, TokenStream, ParserRuleContext
@@ -33,3 +35,13 @@ class JavaParser(Parser):
         if not isinstance(parser, Java8Parser):
             raise ValueError("Wrong parser")
         return parser.compilationUnit()
+
+
+class SpeedyKotlinParser(KotlinParser):
+    def parse(self, file_path: str) -> Node:
+        from spam.parser import sa_kotlin
+        input_stream = FileStream(file_path)
+        lexer = self._lexer(input_stream)
+        input_stream = FileStream(file_path)
+        tree = sa_kotlin.parse(input_stream, "kotlinFile", sa_kotlin.SA_ErrorListener())
+        return Parser._compress_tree(Parser._convert_rule_context(tree, self._parser(None).ruleNames, None, lexer))

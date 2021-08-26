@@ -1,4 +1,7 @@
 import os
+
+from torch.utils import data
+from pycode2seq.inference.parsing.utils import read_astminer
 from typing import List, Tuple, Dict
 
 import torch
@@ -102,6 +105,17 @@ class Model:
                 embeddings[method_name] = initial_state.squeeze()
             return embeddings
 
+    def run_model_on_astminer_csv(self, data_path: str, language: str) -> List[Tensor]:
+        # data_path -- path to folder with generated csvs
+        data = read_astminer(data_path)
+        batches = [PathContextBatch([self._string_to_sample(method, 200, True)]) for method in data]
+
+        for batch in batches:
+            batch.move_to_device(self.device)
+
+        with torch.no_grad():
+            return [self.model(batch.contexts, batch.contexts_per_label, batch.labels.shape[0]) for batch in batches]
+
     def run_model_on_file(self, file_path: str, language: str) -> List[Tensor]:
         batches, method_names = self._prepare_batches(file_path, Language.by_name(language))
 
@@ -125,17 +139,23 @@ class Model:
 
         return results
 
-    def _labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> PathContextSample:
-        n_contexts = min(len(data.paths), max_contexts)
+    def _string_to_sample(self, data: str, max_contexts: int, random_context: bool) -> PathContextSample:
+        str_label, *str_contexts = data.split()
+        if str_label == "" or len(str_contexts) == 0:
+            print(f"Bad sample {data}")
+            return None
+
+        # choose random paths
+        n_contexts = min(len(str_contexts), max_contexts)
         context_indexes = np.arange(n_contexts)
         if random_context:
             np.random.shuffle(context_indexes)
-
+        
         parameters = self.config.dataset.target
 
         # convert string label to wrapped numpy array
         wrapped_label = strings_to_wrapped_numpy(
-            [data.label],
+            [str_label],
             self.vocabulary.label_to_id,
             parameters.is_splitted,
             parameters.max_parts,
@@ -149,7 +169,7 @@ class Model:
         ]
 
         # convert each context to list of ints and then wrap into numpy array
-        splitted_contexts = [PathContextDataset._split_context(str(data.paths[i])) for i in context_indexes]
+        splitted_contexts = [PathContextDataset._split_context(str_contexts[i]) for i in context_indexes]
         contexts = {}
         for _cp in context_parts:
             str_values = [_sc[_cp.name] for _sc in splitted_contexts]
@@ -157,7 +177,10 @@ class Model:
                 str_values, _cp.to_id, _cp.parameters.is_splitted, _cp.parameters.max_parts, _cp.parameters.is_wrapped
             )
 
-        return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts)
+        return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts) 
+    
+    def _labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> PathContextSample:
+        return self._string_to_sample(str(data), max_contexts, random_context)
 
     def _get_label_by_id(self, id: int) -> str:
         return list(self.vocabulary.label_to_id.keys())[list(self.vocabulary.label_to_id.values()).index(id)]
