@@ -2,9 +2,9 @@
 
 Pure Python library for `code2seq` embeddings. 
 
-Support extension of existing pretrained code2seq models to multilingual models. 
-We provided an example of Java model extension with Kotlin.
-Pretrained model usage example provided below.  
+Support extension of existing pretrained code2seq embeddings to multilingual models. 
+We provided an example of the Java model extension with Kotlin.
+Pretrained model and its usage example provided below.  
 
 ## Installation
 
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 ### Available models
 
 - Java (`java`)
-- Kotlin (`kt`)
+- Kotlin (`kt` or `kotlin`)
 - Java & Kotlin (`kt_java`)
 
 `kt_java` is compatible with `java` model and should have the same embeddings.
