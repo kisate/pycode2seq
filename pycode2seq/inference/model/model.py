@@ -21,10 +21,10 @@ from pycode2seq.inference.model.data import OldVocabulary
 
 class Model:
     models_gdrive_file_ids = {
-        "kt_java": "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t",
-        "java": "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t",
-        "kt": "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t",
-        "kotlin": "1v8GFPraNFLmiQxXBZAK3K9CIyhIADp-t"
+        "kt_java": "1ELADS51KCsDS6t7txeCxii9e-mNpZ7Tk",
+        "java": "1ELADS51KCsDS6t7txeCxii9e-mNpZ7Tk",
+        "kt": "1ELADS51KCsDS6t7txeCxii9e-mNpZ7Tk",
+        "kotlin": "1ELADS51KCsDS6t7txeCxii9e-mNpZ7Tk"
     }
 
     multi_models = ["kt_java"]
