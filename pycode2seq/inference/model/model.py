@@ -1,18 +1,14 @@
 import os
+from random import shuffle
+from code2seq.data.path_context_dataset import PathContextDataset
 
-from torch.utils import data
 from pycode2seq.inference.parsing.utils import read_astminer
 from typing import List, Tuple, Dict
 
 import torch
-import numpy as np
 
-from code2seq.dataset import PathContextBatch, PathContextSample, PathContextDataset
-from code2seq.dataset.data_classes import ContextPart, FROM_TOKEN, PATH_NODES, TO_TOKEN
+from code2seq.data.path_context import BatchedLabeledPathContext, LabeledPathContext, Path
 from code2seq.model import Code2Seq
-from code2seq.utils.converting import strings_to_wrapped_numpy
-from code2seq.utils.metrics import PredictionStatistic
-from code2seq.utils.vocabulary import Vocabulary
 from omegaconf import OmegaConf
 from torch import Tensor
 
@@ -20,11 +16,7 @@ from pycode2seq.inference.language import Language
 from pycode2seq.inference.model.labels import LabeledData, extract_labels_with_paths
 from pycode2seq.inference.model.loader import ModelLoader
 from pycode2seq.inference.paths.extracting import ExtractingParams
-
-
-from code2seq import utils
-import sys
-sys.modules["utils"] = utils
+from pycode2seq.inference.model.data import OldVocabulary
 
 
 class Model:
@@ -58,10 +50,10 @@ class Model:
     def __init__(self, config_path: str, vocabulary_path: str, checkpoint_path: str,
                  extracting_params: ExtractingParams, model_name: str) -> None:
         self.config = OmegaConf.load(config_path)
-        self.vocabulary = Vocabulary.load_vocabulary(vocabulary_path)
-        self.model = Code2Seq(self.config, self.vocabulary)
+        self.vocabulary = OldVocabulary(vocabulary_path)
+        self.model = Code2Seq(self.config.model, self.config.optimizer, self.vocabulary)
 
-        self.model.load_state_dict(torch.load(checkpoint_path, map_location=torch.device('cpu'))["state_dict"])
+        self.model.load_state_dict(torch.load(checkpoint_path, map_location=torch.device('cpu')))
 
         self.device = torch.device("cpu")
         self.to(self.device)
@@ -76,11 +68,11 @@ class Model:
         self.device = device
         self.model.to(self.device)
 
-    def _prepare_batches(self, file_path: str, language: Language) -> Tuple[List[PathContextBatch], List[str]]:
+    def _prepare_batches(self, file_path: str, language: Language) -> Tuple[List[BatchedLabeledPathContext], List[str]]:
         root = language.parse(file_path)
         data = extract_labels_with_paths(root, self.extracting_params, language.split_on_methods)
         method_names = [d.method_name for d in data]
-        batches = [PathContextBatch([self._labeled_data_to_sample(method, 200, True)]) for method in data]
+        batches = [BatchedLabeledPathContext([self._labeled_data_to_sample(method, 200, True)]) for method in data]
 
         for batch in batches:
             batch.move_to_device(self.device)
@@ -96,8 +88,7 @@ class Model:
         with torch.no_grad():
             embeddings = {}
             for batch, method_name in zip(batches, method_names):
-                encoded_paths = self.model.encoder(batch.contexts)
-
+                encoded_paths = self.model._encoder(batch.from_token, batch.path_nodes, batch.to_token)
                 # [n layers; batch size; decoder size]
                 coded_batch = [ctx_batch.mean(0).unsqueeze(0) for ctx_batch in
                                encoded_paths.split(batch.contexts_per_label)]
@@ -139,47 +130,36 @@ class Model:
 
         return results
 
-    def _string_to_sample(self, data: str, max_contexts: int, random_context: bool) -> PathContextSample:
-        str_label, *str_contexts = data.split()
-        if str_label == "" or len(str_contexts) == 0:
+    def _string_to_sample(self, data: str, max_contexts: int, random_context: bool) -> LabeledPathContext:
+        str_label, *str_path_contexts = data.split()
+        if str_label == "" or len(str_path_contexts) == 0:
             print(f"Bad sample {data}")
             return None
 
         # choose random paths
-        n_contexts = min(len(str_contexts), max_contexts)
-        context_indexes = np.arange(n_contexts)
+        n_contexts = min(len(str_path_contexts), max_contexts)
         if random_context:
-            np.random.shuffle(context_indexes)
+            shuffle(str_path_contexts)
+        str_contexts = str_path_contexts[:n_contexts]
         
-        parameters = self.config.dataset.target
+        parameters = self.config.data
 
         # convert string label to wrapped numpy array
-        wrapped_label = strings_to_wrapped_numpy(
-            [str_label],
-            self.vocabulary.label_to_id,
-            parameters.is_splitted,
-            parameters.max_parts,
-            parameters.is_wrapped,
-        )
-
-        context_parts = [
-            ContextPart(FROM_TOKEN, self.vocabulary.token_to_id, self.config.dataset.token),
-            ContextPart(PATH_NODES, self.vocabulary.node_to_id, self.config.dataset.path),
-            ContextPart(TO_TOKEN, self.vocabulary.token_to_id, self.config.dataset.token),
-        ]
+        label = PathContextDataset.tokenize_label(str_label, self.vocabulary.label_to_id, parameters.max_label_parts)
 
         # convert each context to list of ints and then wrap into numpy array
-        splitted_contexts = [PathContextDataset._split_context(str_contexts[i]) for i in context_indexes]
-        contexts = {}
-        for _cp in context_parts:
-            str_values = [_sc[_cp.name] for _sc in splitted_contexts]
-            contexts[_cp.name] = strings_to_wrapped_numpy(
-                str_values, _cp.to_id, _cp.parameters.is_splitted, _cp.parameters.max_parts, _cp.parameters.is_wrapped
-            )
+        paths = [self._string_to_path(path.split(","), parameters) for path in str_path_contexts]
 
-        return PathContextSample(contexts=contexts, label=wrapped_label, n_contexts=n_contexts) 
+        return LabeledPathContext(label, paths)
     
-    def _labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> PathContextSample:
+    def _string_to_path(self, data: List[str], parameters) -> Path:
+        return Path(
+            from_token=PathContextDataset.tokenize_token(data[0], self.vocabulary.token_to_id, parameters.max_token_parts),
+            path_node=PathContextDataset.tokenize_token(data[1], self.vocabulary.node_to_id, parameters.path_length),
+            to_token=PathContextDataset.tokenize_token(data[2], self.vocabulary.token_to_id, parameters.max_token_parts),
+        )
+
+    def _labeled_data_to_sample(self, data: LabeledData, max_contexts: int, random_context: bool) -> LabeledPathContext:
         return self._string_to_sample(str(data), max_contexts, random_context)
 
     def _get_label_by_id(self, id: int) -> str:
