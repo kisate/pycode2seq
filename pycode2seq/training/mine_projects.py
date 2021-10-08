@@ -13,7 +13,7 @@ holdouts = ["train", "test", "val"]
 
 def call_astminer(path, output_path, cli_path):
     subprocess.call(
-        f"{cli_path} code2vec --lang kt --project {path} --output {Path(output_path, path.name)} --split-tokens --granularity method --hide-method-name",
+        f"{cli_path} code2vec --lang java --project {path} --output {Path(output_path, path.name)} --split-tokens --granularity method --hide-method-name",
         cwd=Path(cli_path).parent,
         shell=True)
 

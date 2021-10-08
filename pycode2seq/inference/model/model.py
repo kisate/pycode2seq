@@ -3,7 +3,7 @@ from random import shuffle
 from code2seq.data.path_context_dataset import PathContextDataset
 
 from pycode2seq.inference.parsing.utils import read_astminer
-from typing import List, Tuple, Dict
+from typing import List, Optional, Tuple, Dict
 
 import torch
 
@@ -72,7 +72,8 @@ class Model:
         root = language.parse(file_path)
         data = extract_labels_with_paths(root, self.extracting_params, language.split_on_methods)
         method_names = [d.method_name for d in data]
-        batches = [BatchedLabeledPathContext([self._labeled_data_to_sample(method, 200, True)]) for method in data]
+        samples = [self._labeled_data_to_sample(method, 200, True) for method in data]
+        batches = [BatchedLabeledPathContext([sample]) for sample in samples]
 
         for batch in batches:
             batch.move_to_device(self.device)
@@ -96,22 +97,34 @@ class Model:
                 embeddings[method_name] = initial_state.squeeze()
             return embeddings
 
-    def run_model_on_astminer_csv(self, data_path: str, language: str) -> List[Tensor]:
+    def astminer_embeddings_for_file(self, data_path: str, language: str) -> List[Tuple[str, Tensor]]:
         # data_path -- path to folder with generated csvs
         data = read_astminer(data_path)
-        batches = [PathContextBatch([self._string_to_sample(method, 200, True)]) for method in data]
+        named_samples = [(name, self._string_to_sample(paths, 200, True)) for name, paths in data]
+        named_batches = [(name, BatchedLabeledPathContext([sample])) for name, sample in named_samples if sample]
 
-        for batch in batches:
+        for _, batch in named_batches:
             batch.move_to_device(self.device)
 
         with torch.no_grad():
-            return [self.model(batch.contexts, batch.contexts_per_label, batch.labels.shape[0]) for batch in batches]
+            embeddings = []
+            for name, batch in named_batches:
+                encoded_paths = self.model._encoder(batch.from_token, batch.path_nodes, batch.to_token)
+                # [n layers; batch size; decoder size]
+                coded_batch = [ctx_batch.mean(0).unsqueeze(0) for ctx_batch in
+                               encoded_paths.split(batch.contexts_per_label)]
+                initial_state = (torch.cat(coded_batch).unsqueeze(0))
+                embeddings.append((name, initial_state.squeeze()))
+            return embeddings
+
+        with torch.no_grad():
+            return [(name, self.model._encoder(batch.from_token, batch.path_nodes, batch.to_token)) for name, batch in named_batches]
 
     def run_model_on_file(self, file_path: str, language: str) -> List[Tensor]:
         batches, method_names = self._prepare_batches(file_path, Language.by_name(language))
 
         with torch.no_grad():
-            return [self.model(batch.contexts, batch.contexts_per_label, batch.labels.shape[0]) for batch in batches]
+            return [self.model.logits_from_batch(batch, None) for batch in batches]
 
     def _run_model_on_file_with_metrics(self, file_path: str, language: str):
         batches, method_names = self._prepare_batches(file_path, Language.by_name(language))
@@ -130,10 +143,9 @@ class Model:
 
         return results
 
-    def _string_to_sample(self, data: str, max_contexts: int, random_context: bool) -> LabeledPathContext:
+    def _string_to_sample(self, data: str, max_contexts: int, random_context: bool) -> Optional[LabeledPathContext]:
         str_label, *str_path_contexts = data.split()
         if str_label == "" or len(str_path_contexts) == 0:
-            print(f"Bad sample {data}")
             return None
 
         # choose random paths
